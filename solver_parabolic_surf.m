@@ -4,6 +4,7 @@ function [v, t, vprime_norm, v_average] = solver_parabolic_surf(D,g,P,MS,KS,R,T,
 
     for i=1:n
         LHS{i} = tau*D(i)*KS + MS; %#ok
+        spy(LHS{i})
         perm(:,i) = symamd(LHS{i}); %#ok
         [L{i},U{i}] = lu(LHS{i}(perm(:,i),perm(:,i)),'vector'); %#ok
     end

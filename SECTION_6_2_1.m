@@ -6,7 +6,7 @@ disp('Linear parabolic problem on a spherical surface')
 % STEP 1: Generate mesh
 level_fun = @(P) P(:,1).^2 + P(:,2).^2 + P(:,3).^2 -1;
 range = [-1,1; -1,1; -1,1];
-Nx = 30; tol = 1e-6; xcut = -0.3;
+Nx = 10; tol = 1e-6; xcut = -0.3;
 [P,h,BulkElements,SurfElements,ElementsPlot] = ...
     generate_mesh3d(level_fun,range,Nx,tol,xcut);
 
@@ -16,8 +16,15 @@ Nx = 30; tol = 1e-6; xcut = -0.3;
 % STEP 3: Solve PDE
 g = {@(u,P,t) 13*P(:,1).*P(:,2).*P(:,3)*exp(t)};
 v0 = R'*(P(:,1).*P(:,2).*P(:,3));
-D = 1; T = 1; tau = 1e-4;
+D = 1; T = 1; tau = 1e-6;
+
+tic
 v = solver_parabolic_surf(D, g, P, MS, KS, R, T, tau, v0);
+toc
+
+tic 
+v2 = solver_parabolic_surf_pcg(D, g, P, MS, KS, R, T, tau, v0);
+toc
 
 % STEP 4: Post-processing
 figure, set(gcf,'Color','white')

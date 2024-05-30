@@ -35,8 +35,16 @@ u0 = [a + b + 1e-3*(2*rand(size(P,1),1)-1), ...
 v0 = [a + b + 1e-3*(2*rand(size(R,2),1)-1), ...
       b/(a+b)^2 + 1e-3*(2*rand(size(R,2),1)-1)];
 T = 5; tau = 1e-5;
+
+tic
 [u,v] = solver_parabolic_bulk_surf(dOmega, dGamma, f, g, ...
 	h, P, M, MS, K, KS, R, T, tau, u0, v0);
+toc
+
+tic
+[u1,v1] = solver_parabolic_bulk_surf_pcg(dOmega, dGamma, f, g, ...
+	h, P, M, MS, K, KS, R, T, tau, u0, v0);
+toc
 	
 % STEP 4: Plot all components of numerical solution
 figure, set(gcf, 'color', 'white')
