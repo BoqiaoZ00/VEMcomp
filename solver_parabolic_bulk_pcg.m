@@ -25,8 +25,8 @@ function [u, t, uprime_norm, u_average] = solver_parabolic_bulk_pcg(D, f, P, M, 
     ubcond = zeros(length(bulknodes), n);  % Preallocate ubcond
     RHS = zeros(length(bulknodes), n);  % Preallocate RHS
 
-    size(LHS)
-    
+    size(LHS{1})
+
     if nargout >= 3
         uprime_norm = zeros(1, NT);
     end
@@ -54,10 +54,10 @@ function [u, t, uprime_norm, u_average] = solver_parabolic_bulk_pcg(D, f, P, M, 
         end
 
         for j = 1:n
-            tol = 1e-6;
-            maxit = 1000;
+            tol = 1e-3;
+            maxit = 100;
             % Use u(bulknodes, j) as the initial guess for the PCG solver
-            [ubcond(:, j), flag] = pcg(LHS{j}, RHS(:, j), tol, maxit, M_precond{j}, M_precond{j}, u(bulknodes, j));
+            [ubcond(:, j), flag] = pcg(LHS{j}, RHS(:, j), tol, maxit, M_precond{j}, M_precond{j}', u(bulknodes, j));
             if flag ~= 0
                 warning('PCG did not converge for component %d at step %d', j, i + 1);
             end

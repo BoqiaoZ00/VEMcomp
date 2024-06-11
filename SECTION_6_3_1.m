@@ -21,7 +21,14 @@ alpha = 1; beta = 2; gamma = -1; delta = 2;
 f = @(P) P(:,1).*P(:,2).*P(:,3);
 % right-hand-side of 2nd eq. in (35)
 g = @(P) 29*P(:,1).*P(:,2).*P(:,3);
+
+tic
 [u,v] = solver_elliptic_bulk_surf(dOmega, dGamma, alpha, beta, f, g, P, M, MS, K, KS, R, gamma, delta);
+toc
+
+tic
+[u,v] = solver_elliptic_bulk_surf_pcg(dOmega, dGamma, alpha, beta, f, g, P, M, MS, K, KS, R, gamma, delta);
+toc
 
 %% STEP 4: Post-processing
 figure, set(gcf, 'Color','white')

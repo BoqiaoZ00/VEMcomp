@@ -29,7 +29,7 @@ function [v, t, vprime_norm, v_average] = solver_parabolic_surf_pcg(D,g,P,MS,KS,
 
             % Use PCG to solve the linear system
             % Assuming LHS is SPD; if not, additional work may be needed to ensure it
-            tol = 1e-3;
+            tol = 1e-6;
             maxit = 50;
             [v_new(:,j), flag] = pcg(LHS{j}, RHS, tol, maxit, M{j}, M{j}', v(:,j)); 
             if flag ~= 0

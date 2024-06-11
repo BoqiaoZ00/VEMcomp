@@ -1,4 +1,4 @@
-function u = solver_elliptic_bulk(D,alpha,f,P,M,K,R,bcond)
+function u = solver_elliptic_bulk_pcg(D,alpha,f,P,M,K,R,bcond)
     
     bulknodes = (1:length(M))';
     if strcmp(bcond, 'dir')
@@ -15,7 +15,13 @@ function u = solver_elliptic_bulk(D,alpha,f,P,M,K,R,bcond)
     rhs = M*f(P);
     RHS = rhs(bulknodes);
 
-    ubulk = LHS\RHS;
+   
+    maxit = 500;
+    tol = 1e-3;
+    pre = ichol(LHS);
+    LHS = 0.5 * (LHS + LHS');
+    ubulk = pcg(LHS, RHS, tol, maxit, pre, pre');
+
     u = zeros(length(M),1);
     u(bulknodes,:) = ubulk;
 
