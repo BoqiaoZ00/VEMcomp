@@ -233,6 +233,10 @@ classdef element2d < handle
     methods
         function obj = element2d(P, is_square, is_boundary, Pind, P0)
             % ELEMENT Construct an instance of this class
+            if nargin == 0
+                % No arguments passed, dummy constructor
+                return;
+            end
             obj.P = P;
             obj.NVert = length(obj.P);
             if nargin >= 2

@@ -23,13 +23,10 @@ ES = element2d(PS, true);
 [X, Y] = meshgrid(linspace(Q(1,1), Q(1,2), Nx), linspace(Q(2,1), Q(2,2), Nx));
 P = [X(:), Y(:), zeros(Nx^2, 1)];
 
-% (MODIFIED CODE) GENERATE ELEMENTS
-max_num_of_elements = (Nx-1)*(Ny-1);
-count_square_ele = 0;
-count_nonsquare_ele = 0;
-dummy_element2d = element2d();
-SquareElements(max_num_of_elements, 1) = dummy_element2d;
-NonSquareElements(max_num_of_elements, 1) = dummy_element2d;
+% GENERATE ELEMENTS
+tic
+SquareElements = [];
+NonSquareElements = [];
 SE = cell(0,1);
 accepted_node = false(Nrect,1);
 for i=0:Nx-2 % For each element of the bounding box
@@ -44,25 +41,19 @@ for i=0:Nx-2 % For each element of the bounding box
         end
         if is_inside(NewSquareElement, fun)
             % Store square elements that are inside domain
-            count_square_ele = count_square_ele + 1;
             accepted_node(indexes) = true(4,1);
             setPind(NewSquareElement, indexes);
-            SquareElements(count_square_ele) = NewSquareElement; 
+            SquareElements = [SquareElements; NewSquareElement]; %#ok 
             continue
         end
         % Store non-square elements obtained by cutting square elements
         % with boundary. Such non-square elements are not endowed with node
         % indexes yet.
-        count_nonsquare_ele = count_nonsquare_ele + 1;
         [NewElement, LocalSurfaceElements] = cut(NewSquareElement, fun, tol);
-        NonSquareElements(count_nonsquare_ele) = NewElement; 
-        %SE{end+1} = LocalSurfaceElements; %#ok
+        NonSquareElements = [NonSquareElements; NewElement]; %#ok 
         SE = [SE; LocalSurfaceElements]; %#ok
     end
 end
-SquareElements = SquareElements(1:count_square_ele); 
-NonSquareElements = NonSquareElements(1:count_nonsquare_ele); 
-
 
 % AFTER ELIMINATING SQUARE ELEMENTS THAT ARE OUTSIDE DOMAIN, RE-DETERMINE
 % INDEXES OF NODES USED BY SQUARE ELEMENTS
