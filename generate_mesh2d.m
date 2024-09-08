@@ -23,7 +23,7 @@ ES = element2d(PS, true);
 [X, Y] = meshgrid(linspace(Q(1,1), Q(1,2), Nx), linspace(Q(2,1), Q(2,2), Nx));
 P = [X(:), Y(:), zeros(Nx^2, 1)];
 
-% (MODIFIED CODE) GENERATE ELEMENTS
+% (CODE MODIFIED) GENERATE ELEMENTS
 max_num_of_elements = (Nx-1)*(Ny-1);
 count_square_ele = 0;
 count_nonsquare_ele = 0;
