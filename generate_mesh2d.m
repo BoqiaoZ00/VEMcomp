@@ -27,10 +27,11 @@ P = [X(:), Y(:), zeros(Nx^2, 1)];
 max_num_of_elements = (Nx-1)*(Ny-1);
 count_square_ele = 0;
 count_nonsquare_ele = 0;
+count_se = 0;
 dummy_element2d = element2d();
 SquareElements(max_num_of_elements, 1) = dummy_element2d;
 NonSquareElements(max_num_of_elements, 1) = dummy_element2d;
-SE = cell(0,1);
+SE = repmat({zeros(2, 3)}, max_num_of_elements, 1); 
 accepted_node = false(Nrect,1);
 for i=0:Nx-2 % For each element of the bounding box
     for j=0:Ny-2
@@ -54,15 +55,15 @@ for i=0:Nx-2 % For each element of the bounding box
         % with boundary. Such non-square elements are not endowed with node
         % indexes yet.
         count_nonsquare_ele = count_nonsquare_ele + 1;
+        count_se = count_se + 1;
         [NewElement, LocalSurfaceElements] = cut(NewSquareElement, fun, tol);
         NonSquareElements(count_nonsquare_ele) = NewElement; 
-        %SE{end+1} = LocalSurfaceElements; %#ok
-        SE = [SE; LocalSurfaceElements]; %#ok
+        SE(count_se) = LocalSurfaceElements;
     end
 end
 SquareElements = SquareElements(1:count_square_ele); 
 NonSquareElements = NonSquareElements(1:count_nonsquare_ele); 
-
+SE = SE(1:count_se); 
 
 % AFTER ELIMINATING SQUARE ELEMENTS THAT ARE OUTSIDE DOMAIN, RE-DETERMINE
 % INDEXES OF NODES USED BY SQUARE ELEMENTS
@@ -81,6 +82,10 @@ P = uniquetol(P,tol,'ByRows',true);
 
 % FIX ELEMENTS BY ASSIGNING NODE INDEXES AND ELIMINATING DUPLICATE NODES UP
 % TO SMALL TOLERANCE
+
+% QUESTION: if two SquareElements are with the tol, then they refer to the
+% same element in P. But in this case, does SquareElements list contain
+% duplicate elements?
 for i=1:length(SquareElements)
    [~, ind] = ismembertol(SquareElements(i).P,P,tol,'ByRows',true);
    setPind(SquareElements(i), ind);
@@ -105,24 +110,14 @@ end
 
 % DETERMINE IF ELEMENT IS OUTSIDE DOMAIN (POSSIBLY TOUCHING BOUNDARY)
 function outside = is_outside(Element, fun)
-    outside = true;
-    for i=1:length(Element.P)
-        if fun(Element.P(i,:)) < 0
-            outside = false;
-            break
-        end
-    end
+    values = fun(Element.P);
+    outside = all(values >= 0);
 end
 
 % DETERMINE IF ELEMENT IS INSIDE DOMAIN (POSSIBLY TOUCHING BOUNDARY)
 function inside = is_inside(Element, fun)
-    inside = true;
-    for i=1:length(Element.P)
-        if fun(Element.P(i,:)) > 0
-            inside = false;
-            break
-        end
-    end
+    values = fun(Element.P);
+    inside = all(values <= 0);
 end
 
 % CUTS GIVEN ELEMENT BY BOUNDARY OF DOMAIN

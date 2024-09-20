@@ -48,67 +48,117 @@ Nbulk_repeated = 0;
 for i=1:length(BulkElements)
     Nbulk_repeated = Nbulk_repeated + BulkElements(i).NVert;
 end
-ii = zeros(Nbulk_repeated,1);
-jj = zeros(Nbulk_repeated,1);
-vk = zeros(Nbulk_repeated,1);
-vm = zeros(Nbulk_repeated,1);
-vc = zeros(Nbulk_repeated,1);
-Nsurf_repeated = size(SurfElements,1)*3;
-sii = zeros(Nsurf_repeated,1);
-sjj = zeros(Nsurf_repeated,1);
-svk = zeros(Nsurf_repeated,1);
-svm = zeros(Nsurf_repeated,1);
-svc = zeros(Nsurf_repeated,1); 
+% Preallocate arrays with initial size (considering maximum possible size)
+ii_local = cell(length(BulkElements), 1);
+jj_local = cell(length(BulkElements), 1);
+vk_local = cell(length(BulkElements), 1);
+vm_local = cell(length(BulkElements), 1);
+vc_local = cell(length(BulkElements), 1);
 
+sii_local = cell(length(BulkElements), 1);
+sjj_local = cell(length(BulkElements), 1);
+svk_local = cell(length(BulkElements), 1);
+svm_local = cell(length(BulkElements), 1);
+svc_local = cell(length(BulkElements), 1);
 
-% MATRIX ASSEMBLY
-bulk_counter = 0;
-surf_counter = 0;
-for i=1:length(BulkElements) % For each bulk element
+% Parallel loop
+parfor (i = 1:length(BulkElements), 4)  % For each bulk element
     E = BulkElements(i);
     eind = E.Pind;
-    oind = ones(E.NVert,1);
-    ii(bulk_counter+1: bulk_counter+E.NVert^2) = kron(oind,eind);
-    jj(bulk_counter+1: bulk_counter+E.NVert^2) = kron(eind,oind);
+    nVert = E.NVert;
+    
+    % Local storage for current element
+    ii_local{i} = repmat(eind, nVert, 1);
+    jj_local{i} = reshape(repmat(eind', nVert, 1), [], 1);
+
     if E.is_cube
-        vm(bulk_counter+1: bulk_counter+E.NVert^2) = MC;
-        vc(bulk_counter+1: bulk_counter+E.NVert^2) = CC;
-        vk(bulk_counter+1: bulk_counter+E.NVert^2) = KC;
+        vm_local{i} = MC;
+        vc_local{i} = CC;
+        vk_local{i} = KC;
     else
         Element = getLocalMatrices(copyElement3d(E));
-        vm(bulk_counter+1: bulk_counter+E.NVert^2) = Element.M(:);
-        vc(bulk_counter+1: bulk_counter+E.NVert^2) = Element.C(:);
-        vk(bulk_counter+1: bulk_counter+E.NVert^2) = Element.K(:);
-        for j=1:Element.NFaces
+        vm_local{i} = Element.M(:);
+        vc_local{i} = Element.C(:);
+        vk_local{i} = Element.K(:);
+
+        % Local storage for surface elements
+        totalRows = sum(arrayfun(@(E) sum([E.Faces([E.Faces.is_boundary]).NVert].^2), Element));
+        sii_temp = zeros(totalRows, 1);
+        sjj_temp = zeros(totalRows, 1);
+        svm_temp = zeros(totalRows, 1);
+        svc_temp = zeros(totalRows, 1);
+        svk_temp = zeros(totalRows, 1);
+
+        sii_temp_count = 0;
+        sjj_temp_count = 0;
+        svm_temp_count = 0;
+        svc_temp_count = 0;
+        svk_temp_count = 0;
+        
+
+        for j = 1:Element.NFaces
             Face = copyElement2d(Element.Faces(j));
             if Face.is_boundary
                 eind_boundary = Face.Pind;
-                oind_boundary = ones(Face.NVert,1);
-                sii(surf_counter+1: surf_counter+Face.NVert^2) = kron(oind_boundary,eind_boundary);
-                sjj(surf_counter+1: surf_counter+Face.NVert^2) = kron(eind_boundary,oind_boundary);
+                n = Face.NVert;  % Number of vertices
+
+                % Use repmat and reshape to replicate indices instead of kron
+                sii_temp(sii_temp_count+1:sii_temp_count+n*n) = repmat(eind_boundary, n, 1);
+                sii_temp_count = sii_temp_count + n*n;
+                sjj_temp(sjj_temp_count+1:sjj_temp_count+n*n) = reshape(repmat(eind_boundary', n, 1), [], 1);
+                sjj_temp_count = sjj_temp_count + n*n;
+
                 Face = getLocalMatrices(Face);
-                svm(surf_counter+1: surf_counter+Face.NVert^2) = Face.M(:);
-                svc(surf_counter+1: surf_counter+Face.NVert^2) = Face.C(:);
-                svk(surf_counter+1: surf_counter+Face.NVert^2) = Face.K(:);
-                surf_counter = surf_counter + Face.NVert^2;
+                svm_temp(svm_temp_count+1:svm_temp_count+n*n) = Face.M(:);
+                svm_temp_count = svm_temp_count + n*n;
+                svc_temp(svc_temp_count+1:svc_temp_count+n*n) = Face.C(:);
+                svc_temp_count = svc_temp_count + n*n;
+                svk_temp(svk_temp_count+1:svk_temp_count+n*n) = Face.K(:);
+                svk_temp_count = svk_temp_count + n*n;
             end
         end
+        sii_local{i} = sii_temp;
+        sjj_local{i} = sjj_temp;
+        svm_local{i} = svm_temp;
+        svc_local{i} = svc_temp;
+        svk_local{i} = svk_temp;
     end
-    bulk_counter = bulk_counter + E.NVert^2;
 end
+% Combine local arrays into global arrays
 
-MS = sparse(sii,sjj, svm);
-CS = sparse(sii,sjj, svc);
-KS = sparse(sii,sjj, svk);
+ii = vertcat(ii_local{:});
+jj = vertcat(jj_local{:});
+vk = vertcat(vk_local{:});
+vm = vertcat(vm_local{:});
+vc = vertcat(vc_local{:});
+
+% Combine surface element data
+sii = vertcat(sii_local{:});
+sjj = vertcat(sjj_local{:});
+svk = vertcat(svk_local{:});
+svm = vertcat(svm_local{:});
+svc = vertcat(svc_local{:});
+
+common_indices = [sii, sjj];
+values = [svm, svc, svk];  % Combine all values
+MS = sparse(common_indices(:, 1), common_indices(:, 2), values(:, 1));
+CS = sparse(common_indices(:, 1), common_indices(:, 2), values(:, 2));
+KS = sparse(common_indices(:, 1), common_indices(:, 2), values(:, 3));
+
+
 MS = MS(boundarynodes,boundarynodes);
 CS = CS(boundarynodes,boundarynodes);
 KS = KS(boundarynodes,boundarynodes);
+
             
 R = spalloc(Nbulk, Nsurf, Nsurf);
 R(boundarynodes,:) = speye(Nsurf);
 
-M = sparse(ii,jj, vm);
-C = sparse(ii,jj, vc);
-K = sparse(ii,jj, vk);
+% Combine common parts in the matrix assembly (if suitable)
+common_indices = [ii, jj];
+values = [vm, vc, vk];  % Combine all values
+M = sparse(common_indices(:, 1), common_indices(:, 2), values(:, 1));
+C = sparse(common_indices(:, 1), common_indices(:, 2), values(:, 2));
+K = sparse(common_indices(:, 1), common_indices(:, 2), values(:, 3));
         
 end

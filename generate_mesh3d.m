@@ -46,23 +46,25 @@ E6S = element2d(P6S, true, false, p6(q6));
 ESD = element3d(PS, [E1S;E2S;E3S;E4S;E5S;E6S], true, (1:8)');
 
 % CREATING GRIDPOINTS OF BOUNDING BOX
-x = linspace(Q(1,1),Q(1,2),Nx); % Gridpoints in [-1,1]
-y = linspace(Q(2,1),Q(2,2),Ny); % Gridpoints in [-1,1]
-z = linspace(Q(3,1),Q(3,2),Nz); % Gridpoints in [-1,1]
-P = zeros(N,3); % Gridpoints of bounding box
-for i=0:Nx-1
-    for j=0:Ny-1
-        for k=0:Nz-1
-            P(Ny*Nz*i+Nz*j+k+1,:) = [x(i+1) y(j+1) z(k+1)];
-        end
-    end
-end
+% Create 1D arrays for x, y, and z
+x = linspace(Q(1,1), Q(1,2), Nx); % 1xNx
+y = linspace(Q(2,1), Q(2,2), Ny); % 1xNy
+z = linspace(Q(3,1), Q(3,2), Nz); % 1xNz
+% Use ndgrid to generate all combinations of x, y, and z
+[X, Y, Z] = ndgrid(x, y, z);  % ndgrid keeps the order of input vectors intact
+% Convert the 3D grids into a single list of points (Nx*Ny*Nz x 3)
+P = [X(:), Y(:), Z(:)];
 
 
 % GENERATE ELEMENTS
-BulkElements = [];
+max_num_of_elements = (Nx-1)*(Ny-1)*(Nz-1);
+dummy_element3d = element3d();
+BulkElements(max_num_of_elements, 1) = dummy_element3d;
+newP = zeros(8*max_num_of_elements, 3);
+bulk_counter = 0;
+newP_counter = 0;
 accepted_node = false(N,1);
-newP = [];
+
 for i=0:Nx-2 % For each element of the bounding box
     for j=0:Ny-2
         for k=0:Nz-2
@@ -88,7 +90,8 @@ for i=0:Nx-2 % For each element of the bounding box
                       end
                    end
                 end
-                BulkElements = [BulkElements; NewCubicElement]; %#ok
+                bulk_counter = bulk_counter + 1;
+                BulkElements(bulk_counter) = NewCubicElement;
                 continue
             end
             % Store non-cubic elements obtained by cutting cubic elements
@@ -110,20 +113,30 @@ for i=0:Nx-2 % For each element of the bounding box
                        end
                     end
                 end
-                BulkElements = [BulkElements; NewElement]; %#ok
-                newP = [newP; NewElement.P];  %#ok
+                numNewPoints = NewElement.NVert;
+                newP(newP_counter + 1:newP_counter + numNewPoints, :) = NewElement.P;
+                newP_counter = newP_counter + numNewPoints; 
+                bulk_counter = bulk_counter + 1;
+                BulkElements(bulk_counter) = NewElement;
             end
         end
     end
 end
+BulkElements = BulkElements(1:bulk_counter);
+newP = newP(1:newP_counter, :);
+
 
 % DETERMINE SET OF NON-REPEATED NODES UP TO SMALL TOLERANCE
 P = uniquetol([P(accepted_node,:); newP],tol,'ByRows',true);
 
-ElementsPlot = [];
+dummy_element2d = element2d();
+total_faces = sum(arrayfun(@(e) e.NFaces, BulkElements));
+ElementsPlot(total_faces, 1) = dummy_element2d;
+ele_plot_counter = 0;
 % FIX ELEMENTS BY ASSIGNING NODE INDEXES AND ELIMINATING DUPLICATE NODES UP
 % TO SMALL TOLERANCE
-SurfElements = [];
+SurfElements = zeros(4*total_faces, 1);
+surf_counter = 0;
 for i=1:length(BulkElements)
    [~, ind] = ismembertol(BulkElements(i).P,P,tol,'ByRows',true);
    setPind(BulkElements(i), ind);
@@ -133,38 +146,30 @@ for i=1:length(BulkElements)
        setPind(BulkElements(i).Faces(j), ind);
        setP(BulkElements(i).Faces(j), P(ind,:));
        if BulkElements(i).Faces(j).is_boundary
-           SurfElements = [SurfElements; ind']; %#ok
+           SurfElements(surf_counter + 1:surf_counter + length(ind)) = ind'; 
+           surf_counter = surf_counter + length(ind);
        end
        if BulkElements(i).Faces(j).to_plot
-           ElementsPlot = [ElementsPlot; BulkElements(i).Faces(j)]; %#ok
+           ele_plot_counter = ele_plot_counter + 1;
+           ElementsPlot(ele_plot_counter) = BulkElements(i).Faces(j);
        end
    end
 end
-
-
+ElementsPlot = ElementsPlot(1:ele_plot_counter); 
+SurfElements = SurfElements(1:surf_counter); 
 
 end
 
 % DETERMINE IF ELEMENT IS OUTSIDE DOMAIN (POSSIBLY TOUCHING BOUNDARY)
 function outside = is_outside(Element, fun)
-    outside = true;
-    for i=1:length(Element.P)
-        if fun(Element.P(i,:)) < 0
-            outside = false;
-            break
-        end
-    end
+    values = fun(Element.P);
+    outside = all(values >= 0);
 end
 
 % DETERMINE IF ELEMENT IS INSIDE DOMAIN (POSSIBLY TOUCHING BOUNDARY)
 function inside = is_inside(Element, fun)
-    inside = true;
-    for i=1:length(Element.P)
-        if fun(Element.P(i,:)) > 0
-            inside = false;
-            break
-        end
-    end
+    values = fun(Element.P);
+    inside = all(values <= 0);
 end
 
 % CUTS A CUBIC ELEMENT BY BOUNDARY OF DOMAIN
