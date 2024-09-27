@@ -7,7 +7,8 @@ disp('3D Poisson problem on a spherical domain, zero Dirichlet bc')
 % STEP 1: Generate mesh
 level_fun = @(P) P(:,1).^2 + P(:,2).^2 + P(:,3).^2 -1;
 range = [-1,1; -1,1; -1,1];
-Nx = 30; tol = 1e-6; xcut = -0.3;
+Nx = 40; tol = 1e-6; xcut = -0.3;
+
 [P,h,BulkElements,SurfElements,ElementsPlot] = ...
     generate_mesh3d(level_fun,range,Nx,tol,xcut);
 
@@ -18,6 +19,7 @@ Nx = 30; tol = 1e-6; xcut = -0.3;
 D = 1;   alpha = 1; bcond = 'dir';
 f = @(P) 7 - (P(:,1).^2 + P(:,2).^2 + P(:,3).^2);
 u = solver_elliptic_bulk(D, alpha, f, P, M, K, R, bcond);
+%u = solver_elliptic_bulk_pcg(D, alpha, f, P, M, K, R, bcond);
 
 % STEP 4: Post-processing
 figure, set(gcf,'color','white')

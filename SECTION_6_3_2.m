@@ -9,7 +9,7 @@ disp('Bulk-surface reaction-diffusion system on the torus')
 level_fun = @(P) (sqrt(P(:,1).^2 + P(:,2).^2) - 7/10).^2 ...
 	+ P(:,3).^2 - 9/100;
 range = [-1,1;-1,1;-0.31,0.31]; %bounds of Omega as in (42)
-Nx = 11; tol = 1e-10; xcut = -0.5;
+Nx = 5; tol = 1e-10; xcut = -0.5;
 [P,h,BulkElements,SurfElements, ElementsPlot] =  ...
 	generate_mesh3d(level_fun,range,Nx,tol,xcut);
 
@@ -36,16 +36,13 @@ v0 = [a + b + 1e-3*(2*rand(size(R,2),1)-1), ...
       b/(a+b)^2 + 1e-3*(2*rand(size(R,2),1)-1)];
 T = 5; tau = 1e-5;
 
-tic
 [u,v] = solver_parabolic_bulk_surf(dOmega, dGamma, f, g, ...
 	h, P, M, MS, K, KS, R, T, tau, u0, v0);
-toc
+% [u,v] = solver_parabolic_bulk_surf_pcg(dOmega, dGamma, f, g, ...
+% 	h, P, M, MS, K, KS, R, T, tau, u0, v0);
 
-tic
-[u1,v1] = solver_parabolic_bulk_surf_pcg(dOmega, dGamma, f, g, ...
-	h, P, M, MS, K, KS, R, T, tau, u0, v0);
-toc
 	
+%%
 % STEP 4: Plot all components of numerical solution
 figure, set(gcf, 'color', 'white')
 sgtitle('Bulk-surface reaction-diffusion system on the torus')

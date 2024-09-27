@@ -227,6 +227,10 @@ classdef element3d < handle
     methods
         function obj = element3d(P, Faces, is_cube, Pind, P0)
             % ELEMENT3D Construct an instance of this class
+            if nargin == 0
+                % No arguments passed, dummy constructor
+                return;
+            end
             obj.P = P;
             obj.NVert = size(P,1);
             obj.Faces = Faces;

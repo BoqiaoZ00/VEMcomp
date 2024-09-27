@@ -24,13 +24,9 @@ v0 = [a + b + 1e-3*(2*rand(size(P,1),1)-1), ...
       b/(a+b)^2 + 1e-3*(2*rand(size(P,1),1)-1)];
 T = 10; tau = 1e-5;
 
-tic
 [v, t, vprime_norm, v_average] = solver_parabolic_surf(dGamma,g,P,MS,KS,R,T,tau,v0);
-toc
+%[v, t, vprime_norm, v_average] = solver_parabolic_surf_pcg(dGamma,g,P,MS,KS,R,T,tau,v0);
 
-tic
-[v2, t2, vprime_norm2, v_average2] = solver_parabolic_surf_pcg(dGamma,g,P,MS,KS,R,T,tau,v0);
-toc
 % STEP 4: Post-processing
 figure, set(gcf, 'color', 'white')
 sgtitle('Reaction-diffusion system on ellipsoidal surface')
