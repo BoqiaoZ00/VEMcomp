@@ -25,11 +25,4 @@ function [v] = solver_elliptic_surf_pcg(D, alpha, g, P, MS, KS, R)
     
     % Solve using PCG
     v = pcg(LHS, RHS, tol, maxit, M_precond, M_precond', x0);
-    
-    % Check for convergence
-    % if flag ~= 0
-    %     error('PCG did not converge');
-    % end
-    
-
 end

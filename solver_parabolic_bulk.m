@@ -12,11 +12,14 @@ function [u, t, uprime_norm, u_average] = solver_parabolic_bulk(D,f,P,M,K,R,bcon
 
     Mbcond = M(bulknodes, bulknodes);
     Kbcond = K(bulknodes, bulknodes);
-    
+   
+    LHS = cell(1, n);
+    L = cell(1, n);
+    U = cell(1, n);
     for i=1:n
-        LHS{i} = tau*D(i)*Kbcond + Mbcond; %#ok
+        LHS{i} = tau*D(i)*Kbcond + Mbcond;
         perm(:,i) = symamd(LHS{i}); %#ok
-        [L{i},U{i}] = lu(LHS{i}(perm(:,i),perm(:,i)),'vector'); %#ok
+        [L{i},U{i}] = lu(LHS{i}(perm(:,i),perm(:,i)),'vector');
     end
 
     NT = ceil(T/tau);
@@ -42,13 +45,17 @@ function [u, t, uprime_norm, u_average] = solver_parabolic_bulk(D,f,P,M,K,R,bcon
             waitbar(i/NT,progress_handle, sprintf('Timestepping in progress: %d%%', percent_new));
             percent_prev = percent_new;
         end
+
+        RHS = zeros(numel(bulknodes), n);
+        M_bulknodes = M(bulknodes, :);
         for j=1:n
-            RHS(:,j) = M*(u(:,j) + tau*f{j}(u, P, i*tau)); %#ok
+            RHS(:,j) = M_bulknodes*(u(:,j) + tau*f{j}(u, P, i*tau)); 
         end
-        RHS = RHS(bulknodes,:);
+
+        ubcond = zeros(size(U{j}, 1), n);
         for j=1:n
-            ubcond(:,j) =  U{j}\(L{j}\RHS(perm(:,j),j)); %#ok
-            ubcond(perm(:,j),j) = ubcond(:,j); %#ok
+            ubcond(:,j) =  U{j}\(L{j}\RHS(perm(:,j),j)); 
+            ubcond(perm(:,j),j) = ubcond(:,j); 
         end
         u_new = zeros(length(M),n);
         u_new(bulknodes,:) = ubcond;

@@ -54,7 +54,7 @@ z = linspace(Q(3,1), Q(3,2), Nz); % 1xNz
 [X, Y, Z] = ndgrid(x, y, z);  % ndgrid keeps the order of input vectors intact
 % Convert the 3D grids into a single list of points (Nx*Ny*Nz x 3)
 P = [X(:), Y(:), Z(:)];
-
+P = sortrows(P);
 
 % GENERATE ELEMENTS
 max_num_of_elements = (Nx-1)*(Ny-1)*(Nz-1);
@@ -128,14 +128,13 @@ newP = newP(1:newP_counter, :);
 
 % DETERMINE SET OF NON-REPEATED NODES UP TO SMALL TOLERANCE
 P = uniquetol([P(accepted_node,:); newP],tol,'ByRows',true);
-
 dummy_element2d = element2d();
 total_faces = sum(arrayfun(@(e) e.NFaces, BulkElements));
 ElementsPlot(total_faces, 1) = dummy_element2d;
 ele_plot_counter = 0;
 % FIX ELEMENTS BY ASSIGNING NODE INDEXES AND ELIMINATING DUPLICATE NODES UP
 % TO SMALL TOLERANCE
-SurfElements = zeros(4*total_faces, 1);
+SurfElements = zeros(4*total_faces, 3);
 surf_counter = 0;
 for i=1:length(BulkElements)
    [~, ind] = ismembertol(BulkElements(i).P,P,tol,'ByRows',true);
@@ -146,8 +145,8 @@ for i=1:length(BulkElements)
        setPind(BulkElements(i).Faces(j), ind);
        setP(BulkElements(i).Faces(j), P(ind,:));
        if BulkElements(i).Faces(j).is_boundary
-           SurfElements(surf_counter + 1:surf_counter + length(ind)) = ind'; 
-           surf_counter = surf_counter + length(ind);
+           surf_counter = surf_counter + 1;
+           SurfElements(surf_counter,:) = ind'; 
        end
        if BulkElements(i).Faces(j).to_plot
            ele_plot_counter = ele_plot_counter + 1;
@@ -156,7 +155,7 @@ for i=1:length(BulkElements)
    end
 end
 ElementsPlot = ElementsPlot(1:ele_plot_counter); 
-SurfElements = SurfElements(1:surf_counter); 
+SurfElements = SurfElements(1:surf_counter, :); 
 
 end
 

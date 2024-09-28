@@ -12,9 +12,7 @@ function u = solver_elliptic_bulk_pcg(D,alpha,f,P,M,K,R,bcond)
     Kdir = K(bulknodes, bulknodes);
     
     LHS = D*Kdir + alpha*Mdir;
-    rhs = M*f(P);
-    RHS = rhs(bulknodes);
-
+    RHS = M(:, bulknodes) * f(P(bulknodes, :));
    
     maxit = 500;
     tol = 1e-3;

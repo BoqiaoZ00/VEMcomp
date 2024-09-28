@@ -12,8 +12,7 @@ function u = solver_elliptic_bulk(D,alpha,f,P,M,K,R,bcond)
     Kdir = K(bulknodes, bulknodes);
     
     LHS = D*Kdir + alpha*Mdir;
-    rhs = M*f(P);
-    RHS = rhs(bulknodes);
+    RHS = M(:, bulknodes) * f(P(bulknodes, :)); 
 
     ubulk = LHS\RHS;
     u = zeros(length(M),1);

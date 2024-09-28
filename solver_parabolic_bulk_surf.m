@@ -4,16 +4,23 @@ n = length(dOmega);
 m = length(dGamma);
 PGamma = R'*P;
 
+LHS_Omega = cell(1, n);
+L_Omega = cell(1, n);
+U_Omega = cell(1, n);
+
 for i=1:n
-    LHS_Omega{i} = M+tau*dOmega(i)*K; %#ok
+    LHS_Omega{i} = M+tau*dOmega(i)*K;
     perm_Omega(:,i) = symamd(LHS_Omega{i}); %#ok
-    [L_Omega{i},U_Omega{i}] = lu(LHS_Omega{i}(perm_Omega(:,i),perm_Omega(:,i)),'vector'); %#ok
+    [L_Omega{i},U_Omega{i}] = lu(LHS_Omega{i}(perm_Omega(:,i),perm_Omega(:,i)),'vector'); 
 end
 
+LHS_Gamma = cell(1, n);
+L_Gamma = cell(1, n);
+U_Gamma{i} = cell(1, n);
 for i=1:m
-    LHS_Gamma{i} = MS+tau*dGamma(i)*KS; %#ok
+    LHS_Gamma{i} = MS+tau*dGamma(i)*KS; 
     perm_Gamma(:,i) = symamd(LHS_Gamma{i}); %#ok
-    [L_Gamma{i},U_Gamma{i}] = lu(LHS_Gamma{i}(perm_Gamma(:,i),perm_Gamma(:,i)),'vector'); %#ok
+    [L_Gamma{i},U_Gamma{i}] = lu(LHS_Gamma{i}(perm_Gamma(:,i),perm_Gamma(:,i)),'vector'); 
 end
 
 NT = ceil(T/tau);
@@ -44,20 +51,24 @@ for i=0:NT-1
        percent_prev = percent_new;
    end
 
+   RHS_Omega = zeros(size(M, 1), n);
    for j=1:n
-       RHS_Omega(:,j)= M*(u(:,j) + tau*f{j}(u,P,i*tau)) + tau*R*MS*h{j}(R'*u,v, PGamma, i*tau); %#ok
+       RHS_Omega(:,j)= M*(u(:,j) + tau*f{j}(u,P,i*tau)) + tau*R*MS*h{j}(R'*u,v, PGamma, i*tau); 
    end
+   RHS_Gamma = zeros(size(MS, 1), m);
    for j=1:m
-       RHS_Gamma(:,j)= MS*(v(:,j) + tau*g{j}(R'*u,v,PGamma,i*tau)); %#ok
+       RHS_Gamma(:,j)= MS*(v(:,j) + tau*g{j}(R'*u,v,PGamma,i*tau));
    end
 
+   unew = zeros(size(U_Omega{1}, 1), n);
    for j=1:n
-       unew(:,j) =  U_Omega{j}\(L_Omega{j}\RHS_Omega(perm_Omega(:,j),j)); %#ok
-       unew(perm_Omega(:,j),j) = unew(:,j); %#ok
+       unew(:,j) =  U_Omega{j}\(L_Omega{j}\RHS_Omega(perm_Omega(:,j),j));
+       unew(perm_Omega(:,j),j) = unew(:,j); 
    end
+   vnew = zeros(size(U_Gamma{1}, 1), m);
    for j=1:m
-       vnew(:,j) =  U_Gamma{j}\(L_Gamma{j}\RHS_Gamma(perm_Gamma(:,j),j)); %#ok
-       vnew(perm_Gamma(:,j),j) = vnew(:,j); %#ok
+       vnew(:,j) =  U_Gamma{j}\(L_Gamma{j}\RHS_Gamma(perm_Gamma(:,j),j));
+       vnew(perm_Gamma(:,j),j) = vnew(:,j); 
    end
 
    if nargout >= 4
