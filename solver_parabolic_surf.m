@@ -2,11 +2,13 @@ function [v, t, vprime_norm, v_average] = solver_parabolic_surf(D,g,P,MS,KS,R,T,
     
     n = length(D);
 
+    LHS = cell(1, n);
+    L = cell(1, n);
+    U = cell(1, n);
     for i=1:n
-        LHS{i} = tau*D(i)*KS + MS; %#ok
-        spy(LHS{i})
+        LHS{i} = tau*D(i)*KS + MS; 
         perm(:,i) = symamd(LHS{i}); %#ok
-        [L{i},U{i}] = lu(LHS{i}(perm(:,i),perm(:,i)),'vector'); %#ok
+        [L{i},U{i}] = lu(LHS{i}(perm(:,i),perm(:,i)),'vector'); 
     end
     PS = R'*P;
     NT = ceil(T/tau);
@@ -21,9 +23,11 @@ function [v, t, vprime_norm, v_average] = solver_parabolic_surf(D,g,P,MS,KS,R,T,
         % spatial average of first component of v
         v_average = zeros(1,NT);
     end
+
+    RHS = zeros(size(MS,1), n);
     for i=0:NT-1
         for j=1:n
-            RHS(:,j) = MS*(v(:,j) + tau*g{j}(v, PS, i*tau)); %#ok
+            RHS(:,j) = MS*(v(:,j) + tau*g{j}(v, PS, i*tau));
             v_new(perm(:,j),j) =  U{j}\(L{j}\RHS(perm(:,j),j));
         end
         if nargout >= 3

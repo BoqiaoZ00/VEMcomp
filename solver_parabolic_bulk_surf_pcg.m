@@ -51,7 +51,7 @@ for i = 0:NT-1
 
     RHS_Omega = zeros(size(M, 1), n);
     for j = 1:n
-        RHS_Omega(:, j) = M * (u(:, j) + tau * f{j}(u, P, i * tau)) + tau * R * MS * h{j}(R' * u, v, PGamma, i * tau); %#ok
+        RHS_Omega(:, j) = M * (u(:, j) + tau * f{j}(u, P, i * tau)) + tau * R * MS * h{j}(R' * u, v, PGamma, i * tau); 
     end
     RHS_Gamma = zeros(size(MS, 1), m);
     for j = 1:m
@@ -60,14 +60,14 @@ for i = 0:NT-1
 
     unew = zeros(size(LHS_Omega{1}, 1), n);
     for j = 1:n
-        [unew(:, j), flag] = pcg(LHS_Omega{j}, RHS_Omega(:, j), tol, maxit, M_precond_Omega{j}, M_precond_Omega{j}', u(:, j)); %#ok
+        [unew(:, j), flag] = pcg(LHS_Omega{j}, RHS_Omega(:, j), tol, maxit, M_precond_Omega{j}, M_precond_Omega{j}', u(:, j)); 
         if flag ~= 0
             warning('PCG did not converge for component %d at time step %d', j, i);
         end
     end
     vnew = zeros(size(LHS_Gamma{1}, 1), m);
     for j = 1:m
-        [vnew(:, j), flag] = pcg(LHS_Gamma{j}, RHS_Gamma(:, j), tol, maxit, M_precond_Gamma{j}, M_precond_Gamma{j}', v(:, j)); %#ok
+        [vnew(:, j), flag] = pcg(LHS_Gamma{j}, RHS_Gamma(:, j), tol, maxit, M_precond_Gamma{j}, M_precond_Gamma{j}', v(:, j)); 
         if flag ~= 0
             warning('PCG did not converge for component %d at time step %d', j, i);
         end

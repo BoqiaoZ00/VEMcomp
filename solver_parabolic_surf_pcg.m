@@ -18,19 +18,15 @@ function [v, t, vprime_norm, v_average] = solver_parabolic_surf_pcg(D,g,P,MS,KS,
     LHS = cell(1, n);
     M = cell(1, n);
     for j=1:n
-        LHS{j} = tau*D(j)*KS + MS; %#ok
-        M{j} = ichol(LHS{j}, struct('type', 'ict', 'droptol', 1e-3)); %#ok
+        LHS{j} = tau*D(j)*KS + MS; 
+        M{j} = ichol(LHS{j}, struct('type', 'ict', 'droptol', 1e-3)); 
     end
 
     for i=0:NT-1
         for j=1:n
             RHS = MS*(v(:,j) + tau*g{j}(v, PS, i*tau));
-
-
-            % Use PCG to solve the linear system
-            % Assuming LHS is SPD; if not, additional work may be needed to ensure it
-            tol = 1e-6;
-            maxit = 50;
+            tol = 1e-10;
+            maxit = 3000;
             [v_new(:,j), flag] = pcg(LHS{j}, RHS, tol, maxit, M{j}, M{j}', v(:,j)); 
             if flag ~= 0
                 error('PCG did not converge');
